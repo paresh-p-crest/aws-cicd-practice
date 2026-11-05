@@ -1,0 +1,34 @@
+version: 0.2
+
+# Builds the React app and publishes it to S3, then clears the CloudFront
+# cache so visitors get the new files instead of the cached old ones.
+#
+# Environment variables set on the CodeBuild project:
+#   VITE_API_URL        the backend's public URL
+#   VITE_ENV            e.g. prod
+#   SITE_BUCKET         the private S3 bucket serving the site
+#   DISTRIBUTION_ID     the CloudFront distribution to invalidate
+
+phases:
+  pre_build:
+    commands:
+      - set -e
+      # Vite reads .env at build time. The pipeline writes it here so the
+      # deployed bundle carries production values, not a developer's local ones.
+      - |
+        cat > .env <<ENVFILE
+        VITE_API_URL=${VITE_API_URL}
+        VITE_ENV=${VITE_ENV}
+        ENVFILE
+
+  build:
+    commands:
+      - npm install
+      - npm run build
+
+  post_build:
+    commands:
+      # --delete removes files that are no longer part of the build, so old
+      # hashed bundles do not pile up in the bucket forever.
+      - aws s3 sync dist/ "s3://${SITE_BUCKET}" --delete
+      - aws cloudfront create-invalidation --distribution-id "${DISTRIBUTION_ID}" --paths "/*"

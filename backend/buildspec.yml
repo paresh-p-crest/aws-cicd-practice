@@ -1,0 +1,35 @@
+version: 0.2
+
+# Builds the backend into a container image and pushes it to ECR.
+# ECS then pulls that image and rolls out new containers.
+#
+# Environment variables set on the CodeBuild project:
+#   AWS_ACCOUNT_ID   your account number
+#   AWS_DEFAULT_REGION
+#   ECR_REPO_NAME    e.g. devops-learn-backend
+#   CONTAINER_NAME   the name used in the ECS task definition
+
+phases:
+  pre_build:
+    commands:
+      - set -e
+      - REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${ECR_REPO_NAME}"
+      # Tag with the commit SHA so every image is traceable to its source.
+      - IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual}"
+      - aws ecr get-login-password --region "${AWS_DEFAULT_REGION}" | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+
+  build:
+    commands:
+      - docker build -t "${REPO_URI}:${IMAGE_TAG}" -t "${REPO_URI}:latest" .
+
+  post_build:
+    commands:
+      - docker push "${REPO_URI}:${IMAGE_TAG}"
+      - docker push "${REPO_URI}:latest"
+      # imagedefinitions.json tells the pipeline's ECS deploy stage which
+      # image to roll out.
+      - printf '[{"name":"%s","imageUri":"%s"}]' "${CONTAINER_NAME}" "${REPO_URI}:${IMAGE_TAG}" > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
