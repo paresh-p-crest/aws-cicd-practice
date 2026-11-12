@@ -13,7 +13,8 @@ phases:
   pre_build:
     commands:
       - set -e
-      # CodeBuild starts at the repo root; the app lives one folder down.
+      # CodeBuild starts at the repo root and the app lives one folder down.
+      # The working directory carries across phases, so this is done once.
       - cd frontend
       # Vite reads .env at build time. The pipeline writes it here so the
       # deployed bundle carries production values, not a developer's local ones.
@@ -25,15 +26,11 @@ phases:
 
   build:
     commands:
-      # Each phase starts in a fresh shell at the repo root, so the directory
-      # change has to be repeated rather than carried over from pre_build.
-      - cd frontend
       - npm install
       - npm run build
 
   post_build:
     commands:
-      - cd frontend
       # --delete removes files that are no longer part of the build, so old
       # hashed bundles do not pile up in the bucket forever.
       - aws s3 sync dist/ "s3://${SITE_BUCKET}" --delete

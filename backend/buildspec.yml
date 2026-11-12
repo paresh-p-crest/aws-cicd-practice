@@ -9,23 +9,18 @@ version: 0.2
 #   ECR_REPO_NAME    e.g. devops-be-prs-7
 #   CONTAINER_NAME   the name used in the ECS task definition
 
-env:
-  variables:
-    # Each phase runs in its own shell, so a variable set with `export` in
-    # pre_build is gone by the build phase. Values shared across phases are
-    # declared here instead, or recomputed where they are needed.
-    DOCKER_BUILDKIT: "1"
-
 phases:
   pre_build:
     commands:
       - set -e
+      # The working directory carries across phases, so this is done once.
       - cd backend
       - aws ecr get-login-password --region "${AWS_DEFAULT_REGION}" | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
 
   build:
     commands:
-      - cd backend
+      # Shell variables do NOT carry across phases, only the directory does,
+      # so the image URI is recomputed in each phase that uses it.
       - REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${ECR_REPO_NAME}"
       # Tag with the commit SHA so every image is traceable to its source.
       - IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual}"
@@ -33,7 +28,6 @@ phases:
 
   post_build:
     commands:
-      - cd backend
       - REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${ECR_REPO_NAME}"
       - IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual}"
       - docker push "${REPO_URI}:${IMAGE_TAG}"
