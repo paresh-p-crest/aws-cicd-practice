@@ -6,24 +6,36 @@ version: 0.2
 # Environment variables set on the CodeBuild project:
 #   AWS_ACCOUNT_ID   your account number
 #   AWS_DEFAULT_REGION
-#   ECR_REPO_NAME    e.g. devops-learn-backend
+#   ECR_REPO_NAME    e.g. devops-be-prs-7
 #   CONTAINER_NAME   the name used in the ECS task definition
+
+env:
+  variables:
+    # Each phase runs in its own shell, so a variable set with `export` in
+    # pre_build is gone by the build phase. Values shared across phases are
+    # declared here instead, or recomputed where they are needed.
+    DOCKER_BUILDKIT: "1"
 
 phases:
   pre_build:
     commands:
       - set -e
-      - REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${ECR_REPO_NAME}"
-      # Tag with the commit SHA so every image is traceable to its source.
-      - IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual}"
+      - cd backend
       - aws ecr get-login-password --region "${AWS_DEFAULT_REGION}" | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
 
   build:
     commands:
+      - cd backend
+      - REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${ECR_REPO_NAME}"
+      # Tag with the commit SHA so every image is traceable to its source.
+      - IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual}"
       - docker build -t "${REPO_URI}:${IMAGE_TAG}" -t "${REPO_URI}:latest" .
 
   post_build:
     commands:
+      - cd backend
+      - REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${ECR_REPO_NAME}"
+      - IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual}"
       - docker push "${REPO_URI}:${IMAGE_TAG}"
       - docker push "${REPO_URI}:latest"
       # imagedefinitions.json tells the pipeline's ECS deploy stage which
@@ -31,5 +43,6 @@ phases:
       - printf '[{"name":"%s","imageUri":"%s"}]' "${CONTAINER_NAME}" "${REPO_URI}:${IMAGE_TAG}" > imagedefinitions.json
 
 artifacts:
+  base-directory: backend
   files:
     - imagedefinitions.json
