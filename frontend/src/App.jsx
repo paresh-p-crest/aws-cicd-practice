@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 const ENV = import.meta.env.VITE_ENV ?? 'local';
 
 // Change this line and commit to watch a deploy land on the live site.
-const BANNER = 'Deploy test 1 PRS';
+const BANNER = 'Deploy test PRS';
 
 export default function App() {
   const [health, setHealth] = useState({ state: 'loading' });
