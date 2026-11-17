@@ -1,0 +1,26 @@
+=== PROOF OF WORKING STACK - captured before teardown ===
+Tue Nov 17 17:51:52 IST 2026
+
+--- API through CloudFront (HTTPS, end to end) ---
+HTTP/2 200 
+content-type: application/json; charset=utf-8
+content-length: 105
+date: Tue, 17 Nov 2026 12:21:59 GMT
+etag: W/"69-8GtQqbPE/syt9789IVrHrmWQIq4"
+x-powered-by: Express
+access-control-allow-origin: https://d1ppdq3yj8qnto.cloudfront.net
+vary: Origin
+x-cache: Miss from cloudfront
+via: 1.1 27d8c2b31fb9d40feb3512e436ac4aaa.cloudfront.net (CloudFront)
+x-amz-cf-pop: BOM54-P1
+x-amz-cf-id: L6PWdJnq8TgQYjG1ng7sPa9LaXvv3aIZPIH2ZvrdPm23R2jm5YqDOA==
+
+{"status":"healthy PRS","version":"dev v1","hostname":"ip-172-17-0-40.ec2.internal","uptimeSeconds":4541}
+
+--- Site ---
+status=200
+
+--- ALB direct (HTTP) ---
+HTTP/1.1 200 OK
+Date: Tue, 17 Nov 2026 12:22:01 GMT
+Content-Type: application/json; charset=utf-8
