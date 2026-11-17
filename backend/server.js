@@ -13,8 +13,8 @@ app.use(cors({ origin: process.env.ALLOWED_ORIGIN ?? '*' }));
 // receive traffic. If it fails, the old containers keep serving.
 app.get('/api/health', (_request, response) => {
   response.json({
-    status: 'healthy',
-    version: process.env.APP_VERSION ?? 'dev',
+    status: 'healthy PRS',
+    version: process.env.APP_VERSION ?? 'dev v1',
     hostname: os.hostname(),
     uptimeSeconds: Math.round(process.uptime()),
   });
